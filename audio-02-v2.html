@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f7fa">
+<title>Audio</title>
+<style>
+:root {
+  --bg:#f5f7fa;
+  --text:#111827;
+  --muted:#8a93a0;
+  --track:#e5e7eb;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { margin:0; min-height:100%; }
+body {
+  min-height:100dvh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px 28px;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Segoe UI",sans-serif;
+}
+.player {
+  width:min(100%, 460px);
+  text-align:center;
+}
+.logo {
+  font-size:16px;
+  font-weight:800;
+  letter-spacing:.24em;
+  color:var(--muted);
+  margin-bottom:44px;
+}
+.play-btn {
+  width:180px;
+  height:180px;
+  border:0;
+  border-radius:50%;
+  background:#111827;
+  color:#fff;
+  display:grid;
+  place-items:center;
+  margin:0 auto 36px;
+  box-shadow:0 20px 50px rgba(17,24,39,.18);
+  cursor:pointer;
+}
+.play-btn:active { transform:scale(.985); }
+.play-btn svg { width:72px; height:72px; }
+.status {
+  font-size:30px;
+  font-weight:800;
+  letter-spacing:-.04em;
+  margin-bottom:34px;
+}
+.progress-wrap {
+  width:100%;
+  height:14px;
+  background:var(--track);
+  border-radius:999px;
+  overflow:hidden;
+  cursor:pointer;
+}
+.progress {
+  width:0%;
+  height:100%;
+  background:#111827;
+  border-radius:999px;
+}
+.time {
+  display:flex;
+  justify-content:space-between;
+  margin-top:14px;
+  font-size:18px;
+  font-weight:700;
+  color:#707987;
+  font-variant-numeric:tabular-nums;
+}
+.error {
+  display:none;
+  margin-top:26px;
+  font-size:17px;
+  font-weight:700;
+  color:#b42318;
+}
+audio { display:none; }
+</style>
+</head>
+<body>
+  <main class="player">
+    <div class="logo">AX FAIR</div>
+
+    <button class="play-btn" id="playBtn" aria-label="재생">
+      <svg id="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+    </button>
+
+    <div class="status" id="status">재생하기</div>
+
+    <div class="progress-wrap" id="progressWrap" aria-label="재생 위치">
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <div class="time">
+      <span id="current">0:00</span>
+      <span id="duration">0:00</span>
+    </div>
+
+    <div class="error" id="error">음원을 불러오지 못했습니다.</div>
+
+    <audio id="audio" preload="auto" playsinline>
+      <source src="audio-02.mp3" type="audio/mpeg">
+    </audio>
+  </main>
+
+<script>
+const audio = document.getElementById('audio');
+const btn = document.getElementById('playBtn');
+const icon = document.getElementById('icon');
+const statusEl = document.getElementById('status');
+const progress = document.getElementById('progress');
+const progressWrap = document.getElementById('progressWrap');
+const current = document.getElementById('current');
+const duration = document.getElementById('duration');
+const errorEl = document.getElementById('error');
+
+const PLAY = '<path d="M8 5v14l11-7z"/>';
+const PAUSE = '<path d="M7 5h4v14H7zm6 0h4v14h-4z"/>';
+
+function fmt(sec) {
+  if (!Number.isFinite(sec)) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60).toString().padStart(2,'0');
+  return `${m}:${s}`;
+}
+
+audio.addEventListener('loadedmetadata', () => {
+  duration.textContent = fmt(audio.duration);
+  errorEl.style.display = 'none';
+});
+audio.addEventListener('canplay', () => { errorEl.style.display = 'none'; });
+audio.addEventListener('timeupdate', () => {
+  current.textContent = fmt(audio.currentTime);
+  const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+  progress.style.width = pct + '%';
+});
+audio.addEventListener('play', () => {
+  icon.innerHTML = PAUSE;
+  statusEl.textContent = '재생 중';
+});
+audio.addEventListener('pause', () => {
+  if (!audio.ended) statusEl.textContent = '일시정지';
+  icon.innerHTML = PLAY;
+});
+audio.addEventListener('ended', () => {
+  statusEl.textContent = '다시 듣기';
+  icon.innerHTML = PLAY;
+  audio.currentTime = 0;
+  progress.style.width = '0%';
+});
+audio.addEventListener('error', () => {
+  statusEl.textContent = '재생할 수 없음';
+  errorEl.style.display = 'block';
+});
+btn.addEventListener('click', async () => {
+  errorEl.style.display = 'none';
+  if (audio.paused) {
+    try {
+      await audio.play();
+    } catch (e) {
+      statusEl.textContent = '재생할 수 없음';
+      errorEl.style.display = 'block';
+    }
+  } else {
+    audio.pause();
+  }
+});
+progressWrap.addEventListener('click', (e) => {
+  if (!audio.duration) return;
+  const rect = progressWrap.getBoundingClientRect();
+  const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+  audio.currentTime = ratio * audio.duration;
+});
+window.addEventListener('load', async () => {
+  try { await audio.play(); } catch (e) {}
+});
+</script>
+</body>
+</html>
