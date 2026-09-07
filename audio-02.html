@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f8fb">
+<title>AX Fair Audio</title>
+<style>
+:root {
+  --bg1:#f7f8fb;
+  --bg2:#eef2f7;
+  --text:#111827;
+  --muted:#7a8493;
+  --card:rgba(255,255,255,.82);
+  --line:rgba(17,24,39,.07);
+  --shadow:0 22px 70px rgba(17,24,39,.10);
+  --accent:#111827;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; }
+body {
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Segoe UI",sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255,255,255,.98) 0 18%, transparent 42%),
+    radial-gradient(circle at 84% 18%, rgba(214,222,235,.72) 0 12%, transparent 36%),
+    linear-gradient(160deg,var(--bg1),var(--bg2));
+  display:grid;
+  place-items:center;
+  min-height:100dvh;
+  padding:24px;
+}
+.shell {
+  width:min(100%,430px);
+}
+.brand {
+  text-align:center;
+  margin-bottom:22px;
+}
+.brand .kicker {
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.22em;
+  color:#8a93a0;
+  margin-bottom:8px;
+}
+.brand h1 {
+  margin:0;
+  font-size:30px;
+  line-height:1.1;
+  letter-spacing:-.045em;
+  font-weight:850;
+}
+.brand p {
+  margin:9px 0 0;
+  color:var(--muted);
+  font-size:14px;
+}
+.card {
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--line);
+  background:var(--card);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  box-shadow:var(--shadow);
+  border-radius:30px;
+  padding:32px 24px 24px;
+}
+.card::before {
+  content:"";
+  position:absolute;
+  width:170px;height:170px;
+  border-radius:50%;
+  top:-100px;right:-65px;
+  background:radial-gradient(circle,rgba(17,24,39,.08),transparent 68%);
+}
+.visual {
+  height:128px;
+  display:grid;
+  place-items:center;
+  position:relative;
+  margin-bottom:22px;
+}
+.ring {
+  position:absolute;
+  width:112px;height:112px;
+  border-radius:50%;
+  border:1px solid rgba(17,24,39,.08);
+  animation:breathe 2.7s ease-in-out infinite;
+}
+.ring.r2 { width:88px;height:88px;animation-delay:.35s; }
+@keyframes breathe {
+  0%,100% { transform:scale(.95); opacity:.45; }
+  50% { transform:scale(1.08); opacity:1; }
+}
+.play {
+  position:relative;
+  z-index:2;
+  width:78px;height:78px;
+  border:0;
+  border-radius:50%;
+  background:#111827;
+  color:white;
+  display:grid;
+  place-items:center;
+  box-shadow:0 14px 30px rgba(17,24,39,.22);
+  cursor:pointer;
+}
+.play:active { transform:scale(.98); }
+.play svg { width:30px;height:30px; }
+.status {
+  text-align:center;
+  font-weight:750;
+  font-size:15px;
+  margin-bottom:18px;
+}
+.progress {
+  height:6px;
+  background:#e7eaf0;
+  border-radius:999px;
+  overflow:hidden;
+  cursor:pointer;
+}
+.bar {
+  height:100%;
+  width:0%;
+  border-radius:999px;
+  background:#111827;
+}
+.time {
+  display:flex;
+  justify-content:space-between;
+  margin-top:9px;
+  color:#8a93a0;
+  font-size:12px;
+  font-variant-numeric:tabular-nums;
+}
+.hint {
+  text-align:center;
+  margin:18px 0 0;
+  color:#9aa2ad;
+  font-size:12px;
+  line-height:1.5;
+}
+audio { display:none; }
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="brand">
+    <div class="kicker">AX FAIR</div>
+    <h1>Audio Experience</h1>
+    <p>QR로 연결된 음성을 재생합니다.</p>
+  </header>
+
+  <section class="card">
+    <div class="visual">
+      <div class="ring"></div>
+      <div class="ring r2"></div>
+      <button class="play" id="playBtn" aria-label="재생">
+        <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M8 5.5v13l10-6.5z"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="status" id="status">재생하기</div>
+
+    <div class="progress" id="progress" aria-label="재생 위치">
+      <div class="bar" id="bar"></div>
+    </div>
+
+    <div class="time">
+      <span id="current">0:00</span>
+      <span id="duration">0:00</span>
+    </div>
+
+    <p class="hint">휴대폰의 음량을 확인한 뒤 재생 버튼을 눌러주세요.</p>
+
+    <audio id="audio" preload="metadata" playsinline>
+      <source src="현크크_AX페어 1분 스피치.mp3" type="audio/mpeg">
+    </audio>
+  </section>
+</main>
+
+<script>
+const audio = document.getElementById('audio');
+const btn = document.getElementById('playBtn');
+const icon = document.getElementById('playIcon');
+const statusEl = document.getElementById('status');
+const bar = document.getElementById('bar');
+const progress = document.getElementById('progress');
+const current = document.getElementById('current');
+const duration = document.getElementById('duration');
+
+const playSvg = '<path d="M8 5.5v13l10-6.5z"/>';
+const pauseSvg = '<path d="M7 5h4v14H7zm6 0h4v14h-4z"/>';
+
+function fmt(sec) {
+  if (!isFinite(sec)) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60).toString().padStart(2,'0');
+  return `${m}:${s}`;
+}
+
+audio.addEventListener('loadedmetadata', () => {
+  duration.textContent = fmt(audio.duration);
+});
+
+audio.addEventListener('timeupdate', () => {
+  current.textContent = fmt(audio.currentTime);
+  const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+  bar.style.width = pct + '%';
+});
+
+audio.addEventListener('play', () => {
+  icon.innerHTML = pauseSvg;
+  statusEl.textContent = '재생 중';
+  btn.setAttribute('aria-label','일시정지');
+});
+
+audio.addEventListener('pause', () => {
+  if (!audio.ended) statusEl.textContent = '일시정지';
+  icon.innerHTML = playSvg;
+  btn.setAttribute('aria-label','재생');
+});
+
+audio.addEventListener('ended', () => {
+  statusEl.textContent = '다시 듣기';
+  icon.innerHTML = playSvg;
+  bar.style.width = '0%';
+  audio.currentTime = 0;
+});
+
+btn.addEventListener('click', async () => {
+  if (audio.paused) {
+    try { await audio.play(); }
+    catch(e) { statusEl.textContent = '재생 버튼을 다시 눌러주세요'; }
+  } else {
+    audio.pause();
+  }
+});
+
+progress.addEventListener('click', (e) => {
+  if (!audio.duration) return;
+  const r = progress.getBoundingClientRect();
+  const ratio = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+  audio.currentTime = ratio * audio.duration;
+});
+
+// 일부 모바일 브라우저에서는 QR 링크를 연 직후 자동재생을 차단합니다.
+// 허용되는 환경에서는 즉시 재생을 시도하고, 차단되면 큰 재생 버튼을 그대로 보여줍니다.
+window.addEventListener('load', async () => {
+  try {
+    await audio.play();
+  } catch(e) {
+    statusEl.textContent = '재생하기';
+  }
+});
+</script>
+</body>
+</html>
